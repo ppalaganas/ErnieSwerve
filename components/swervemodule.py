@@ -2,7 +2,7 @@ import math
 
 import wpilib
 import wpimath
-from ctre import CANCoder
+from ctre.sensors import CANCoder
 from rev import CANSparkMax
 
 #from networktables import NetworkTables
@@ -47,16 +47,17 @@ class SwerveModule:
         #kP = 1.5, kI = 0.0, kD = 0.0
         # enable pid continues input (0.0, 5.0)
         # set tolerance (0.05, 0.05)
-        self._pid_controller = PIDController(1.5, 0.0, 0.0, 0.5)
+        self._pid_controller = PIDController(1.5, 0.0, 0.0, 0.05)
         self._pid_controller.enableContinuousInput(0.0, 5.0) # Will set the 0 and 5 as the same point
-        self._pid_controller.setTolerance(2.8, 2) # Tolerance where the PID will be accpeted aligned
+        self._pid_controller.setTolerance(2, 2) # Tolerance where the PID will be accpeted aligned
 
     def get_voltage(self):
         """
         :returns: the voltage position after the zero
         """
         
-        return self.encoder.getBusVoltage() - self.encoder_zero
+        
+        return (((self.encoder.getAbsolutePosition() - self.encoder_zero) / 360) * 5)
         
 
     def flush(self):
@@ -64,19 +65,20 @@ class SwerveModule:
         Flush the modules requested speed and voltage.
         Resets the PID controller.
         """
-        self._requested_voltage = self.encoder_zero
+        self._requested_voltage = (self.encoder_zero / 360) * 5
         self._requested_speed = 0
         self._pid_controller.reset()
 
     @staticmethod
-    def voltage_to_degrees(voltage):
+    def voltage_to_degrees(position):
         """
         Convert a given voltage value to degrees.
 
         :param voltage: a voltage value between 0 and 5
         :returns: the degree value between 0 and 359
         """
-        deg = (voltage / 5) * 360
+        #deg = (position / 5) * 360
+        deg = position
 
         if deg < 0:
             deg += 360
@@ -85,14 +87,14 @@ class SwerveModule:
 
 
     @staticmethod
-    def voltage_to_rad(voltage):
+    def voltage_to_rad(position):
         """
         Convert a given voltage value to rad.
 
         :param voltage: a voltage value between 0 and 5
         :returns: the radian value betwen 0 and 2pi
         """
-        return (voltage / 5) * 2 * math.pi
+        return (position * math.pi / 180)
 
     @staticmethod
     def degree_to_voltage(degree):
@@ -109,7 +111,8 @@ class SwerveModule:
         Round the value to within 360. Set the requested rotate position (requested voltage).
         Intended to be used only by the move function.
         """
-        self._requested_voltage = ((self.degree_to_voltage(value) + self.encoder_zero) % 5)
+        self._requested_voltage = ((self.degree_to_voltage(value) + self.degree_to_voltage(self.encoder_zero)) % 5)
+        #print(self._requested_voltage)
 
     def move(self, speed, deg):
         """
@@ -149,7 +152,7 @@ class SwerveModule:
         # Calculate the error using the current voltage and the requested voltage.
         # DO NOT use the #self.get_voltage function here. It has to be the raw voltage.
 
-        error = self._pid_controller.calculate(self.encoder.getBusVoltage(), self._requested_voltage)
+        error = self._pid_controller.calculate(self.degree_to_voltage(self.encoder.getAbsolutePosition()), self._requested_voltage)
 
         # Set the output 0 as the default value
         output = 0
@@ -159,7 +162,9 @@ class SwerveModule:
             # Use max-min to clamped the output between -1 and 1.
             output = max(min(error, 1), -1)
         #print(self._pid_controller.getSetpoint())
-        print(self.encoder.getBusVoltage())
+        #print(error)
+        #print("output =",output)
+        #print(self.encoder.getPosition())
 
         # Put the output to the dashboard
         #print(output)
