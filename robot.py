@@ -2,7 +2,7 @@
 
 import wpilib
 
-from ctre import CANCoder
+from ctre.sensors import CANCoder
 from rev import CANSparkMax, SparkMaxAbsoluteEncoder
 
 from magicbot import MagicRobot
@@ -49,10 +49,10 @@ class MyRobot(MagicRobot):
     rearRightModule: swervemodule.SwerveModule
 
     # Create configs for each module. This is before #createObjects because modules need these configs to be initialized.
-    frontLeftModule_cfg = ModuleConfig(sd_prefix='FrontLeft_Module', zero=5.5, inverted=True, allow_reverse=True)
-    frontRightModule_cfg = ModuleConfig(sd_prefix='FrontRight_Module', zero=2.69, inverted=False, allow_reverse=True)
-    rearLeftModule_cfg = ModuleConfig(sd_prefix='RearLeft_Module', zero=0.18, inverted=True, allow_reverse=True)
-    rearRightModule_cfg = ModuleConfig(sd_prefix='RearRight_Module', zero=4.76, inverted=False, allow_reverse=True)
+    frontLeftModule_cfg = ModuleConfig(sd_prefix='FrontLeft_Module', zero=202.67578125, inverted=True, allow_reverse=True)
+    frontRightModule_cfg = ModuleConfig(sd_prefix='FrontRight_Module', zero=273.8671875, inverted=False, allow_reverse=True)
+    rearLeftModule_cfg = ModuleConfig(sd_prefix='RearLeft_Module', zero=232.822265625, inverted=True, allow_reverse=True)
+    rearRightModule_cfg = ModuleConfig(sd_prefix='RearRight_Module', zero=5.2734375, inverted=False, allow_reverse=True)
 
     # Create common components
     #vision: vision.Vision
@@ -132,10 +132,10 @@ class MyRobot(MagicRobot):
 
     def teleopPeriodic(self):
         # Drive
-        self.move(self.gamempad.getRawAxis(0), self.gamempad.getRawAxis(2), self.gamempad.getRawAxis(5))
+        self.move(self.gamempad.getRawAxis(1), self.gamempad.getRawAxis(2), self.gamempad.getRawAxis(5))
 
-       
-   
+        print(self.frontRightModule_encoder.getAbsolutePosition())
+        #print(self.gamempad.getRawAxis(2))
         '''
         # Lock
         if self.gamempad.getRawButton(1):
