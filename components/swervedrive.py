@@ -20,9 +20,9 @@ class SwerveDrive:
     #xy_multiplier = ntproperty('/SmartDashboard/drive/drive/xy_multiplier', 0.65)
     #debugging = ntproperty('/SmartDashboard/drive/drive/debugging', False) # Turn to true to run it in verbose mode.
     
-    lower_input_thresh = 0.5
+    lower_input_thresh = 0.1
     rotation_multiplier = 0.5
-    xy_multiplier = 0.5
+    xy_multiplier = 0.65
 
     def setup(self):
         """
@@ -64,8 +64,8 @@ class SwerveDrive:
         self.squared_inputs = True
         self.threshold_input_vectors = True
 
-        self.width = (19.5 / 12) / 2 # (Inch / 12 = Foot) / 2
-        self.length = (22 / 12) / 2 # (Inch / 12 = Foot) / 2
+        self.width = (30 / 12) / 2 # (Inch / 12 = Foot) / 2
+        self.length = (30 / 12) / 2 # (Inch / 12 = Foot) / 2
 
         self.request_wheel_lock = False
 
