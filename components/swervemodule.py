@@ -40,7 +40,7 @@ class SwerveModule:
         # Motor
         self.driveMotor.setInverted(self.inverted)
 
-        self._requested_voltage = 0
+        self._requested_angle = 0
         self._requested_speed = 0
 
         # PID Controller
@@ -49,53 +49,36 @@ class SwerveModule:
         # set tolerance (0.05, 0.05)
         self._pid_controller = PIDController(1.5, 0.0, 0.0, 0.05)
         self._pid_controller.enableContinuousInput(0.0, 5.0) # Will set the 0 and 5 as the same point
-        self._pid_controller.setTolerance(2, 2) # Tolerance where the PID will be accpeted aligned
+        self._pid_controller.setTolerance(1, 1) # Tolerance where the PID will be accpeted aligned
 
-    def get_voltage(self):
+    def get_degree(self):
         """
-        :returns: the voltage position after the zero
+        :returns: the degree from the encoder, return degree
         """
+        return self.encoder.getAbsolutePosition() - self.encoder_zero
         
-        
-        return (((self.encoder.getAbsolutePosition() - self.encoder_zero) / 360) * 5)
+        ##return self.encoder.getBusVoltage() - self.encoder_zero
         
 
     def flush(self):
         """
-        Flush the modules requested speed and voltage.
+        Flush the modules requested speed and degree.
         Resets the PID controller.
         """
-        self._requested_voltage = (self.encoder_zero / 360) * 5
+        self._requested_angle = 0 # Check
         self._requested_speed = 0
-        self._pid_controller.reset()
+        #self._pid_controller.reset()
 
     @staticmethod
-    def voltage_to_degrees(position):
-        """
-        Convert a given voltage value to degrees.
-
-        :param voltage: a voltage value between 0 and 5
-        :returns: the degree value between 0 and 359
-        """
-        #deg = (position / 5) * 360
-        deg = position
-
-        if deg < 0:
-            deg += 360
-
-        return deg
-
-
-    @staticmethod
-    def voltage_to_rad(position):
+    def degree_to_rad(degree):
         """
         Convert a given voltage value to rad.
 
         :param voltage: a voltage value between 0 and 5
         :returns: the radian value betwen 0 and 2pi
         """
-        return (position * math.pi / 180)
-
+        return degree * math.pi / 180
+    
     @staticmethod
     def degree_to_voltage(degree):
         """
@@ -104,15 +87,8 @@ class SwerveModule:
         :param degree: a degree value between 0 and 360
         :returns" the voltage value between 0 and 5
         """
-        return (degree / 360) * 5
-
-    def _set_deg(self, value):
-        """
-        Round the value to within 360. Set the requested rotate position (requested voltage).
-        Intended to be used only by the move function.
-        """
-        self._requested_voltage = ((self.degree_to_voltage(value) + self.degree_to_voltage(self.encoder_zero)) % 5)
-        #print(self._requested_voltage)
+       
+        return degree / 360 * 5
 
     def move(self, speed, deg):
         """
@@ -121,20 +97,23 @@ class SwerveModule:
         :param speed: requested speed of wheel from -1 to 1
         :param deg: requested angle of wheel from 0 to 359 (Will wrap if over or under)
         """
-        deg %= 360 # Prevent values past 360
+        #deg %= 360 # Prevent values past 360
 
+        ## NEED to review
+         
         if self.allow_reverse:
             """
             If the difference between the requested degree and the current degree is
             more than 90 degrees, don't turn the wheel 180 degrees. Instead reverse the speed.
             """
-            if abs(deg - self.voltage_to_degrees(self.get_voltage())) > 90:
+            if abs(deg - self.get_degree() > 90):
                 speed *= -1
                 deg += 180
                 deg %= 360
+        
 
         self._requested_speed = speed
-        self._set_deg(deg)
+        self._requested_angle = deg
 
     def debug(self):
         """
@@ -142,6 +121,7 @@ class SwerveModule:
         """
         print(self.sd_prefix, '; requested_speed: ', self._requested_speed, ' requested_voltage: ', self._requested_voltage)
 
+    
     def execute(self):
         """
         Use the PID controller to get closer to the requested position.
@@ -151,8 +131,11 @@ class SwerveModule:
         """
         # Calculate the error using the current voltage and the requested voltage.
         # DO NOT use the #self.get_voltage function here. It has to be the raw voltage.
-
-        error = self._pid_controller.calculate(self.degree_to_voltage(self.encoder.getAbsolutePosition()), self._requested_voltage)
+        Angle1_0 = self.get_degree()
+        Angle1 = self.degree_to_voltage(Angle1_0)
+        Angle2 = self.degree_to_voltage(self._requested_angle)
+        error = self._pid_controller.calculate(Angle1, Angle2)
+        ## Does the first value need to be set to subtract the zero position
 
         # Set the output 0 as the default value
         output = 0
@@ -161,15 +144,17 @@ class SwerveModule:
         if not self._pid_controller.atSetpoint():
             # Use max-min to clamped the output between -1 and 1.
             output = max(min(error, 1), -1)
-        #print(self._pid_controller.getSetpoint())
-        #print(error)
-        #print("output =",output)
-        #print(self.encoder.getPosition())
 
+        #rotate_speed = (output / 360) * 5
         # Put the output to the dashboard
         #print(output)
         #self.sd.putNumber('drive/%s/output' % self.sd_prefix, output)
+        #print("position = ", self.encoder.getAbsolutePosition())
+        #print("requestedAngle = ", self._requested_angle)
+        #print(output)
+
         # Set the output as the rotateMotor's voltage / also move the rotational motors
+        ## Convert output to voltage value
         self.rotateMotor.set(output)
 
         # Set the requested speed as the driveMotor's voltage
