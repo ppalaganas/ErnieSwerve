@@ -327,6 +327,9 @@ class SwerveDrive:
         for key in self.modules:
             self.modules[key].move(self._requested_speeds[key], self._requested_angles[key])
 
+        #print("speed =", self._requested_speeds)
+        #print("angle =", self._requested_angles)
+
         # Reset the speed back to zero
         self._requested_speeds = dict.fromkeys(self._requested_speeds, 0)
 
