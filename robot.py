@@ -9,8 +9,8 @@ from magicbot import MagicRobot
 
 from robotpy_ext.autonomous.selector import AutonomousModeSelector
 
-#from networktables import NetworkTables
-#from networktables.util import ntproperty
+from networktables import NetworkTables
+from networktables.util import ntproperty
 
 #from rev.color import ColorSensorV3, ColorMatch
 
@@ -64,7 +64,7 @@ class MyRobot(MagicRobot):
         Components with a parent prefix like "shooter_" will be injected.
         """
         # SmartDashboard
-        #self.sd = NetworkTables.getTable('SmartDashboard')
+        self.sd = NetworkTables.getTable('SmartDashboard')
 
         # Gamepad
         self.gamempad = wpilib.Joystick(2)
@@ -93,8 +93,8 @@ class MyRobot(MagicRobot):
 
     def disabledPeriodic(self):
         # Update the dashboard, even when the robot is disabled.
-        #self.update_sd()
-        pass
+        self.update_sd()
+
 
     def autonomousInit(self):
         # Reset the drive when the auto starts.
@@ -127,7 +127,6 @@ class MyRobot(MagicRobot):
             # If the button is pressed, lower the rotate speed.
             rcw *= 0.7
         
-        #print("in move")
         self.drive.move(x, y, rcw)
 
     def teleopPeriodic(self):
@@ -190,10 +189,10 @@ class MyRobot(MagicRobot):
             self.wof.manualTurn(-1)
         else:
             self.wof.manualTurn(0)
-
+        '''
         # Update smartdashboard
-        #self.update_sd()
-'''
+        self.update_sd()
+
     def update_sd(self):
         """
         Calls each component's own update function
